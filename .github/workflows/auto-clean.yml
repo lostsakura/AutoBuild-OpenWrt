@@ -1,4 +1,4 @@
-name: Cleaning
+name: Delete releases and workflows runs
 
 on:
   workflow_dispatch:
@@ -10,18 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 清理workflow
-      uses: Mattraks/delete-workflow-runs@main
+    - name: Delete releases and workflows runs
+      uses: ophub/delete-releases-workflows@main
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        retain_days: 1
-        keep_minimum_runs: 0
-
-    - name: 清理releases
-      uses: dev-drprasad/delete-older-releases@master
-      with:
-        repo: ${{ github.repository }}
-        keep_latest: 4
-        delete_tags: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        delete_releases: true
+        releases_keep_latest: 3
+        delete_workflows: true
+        workflows_keep_day: 1
+        gh_token: ${{ secrets.GITHUB_TOKEN }}

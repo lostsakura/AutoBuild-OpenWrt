@@ -1,5 +1,7 @@
 #!/bin/bash
 
+uci -q get system.@imm_init[0] > "/dev/null" || uci -q add system imm_init > "/dev/null"
+
 uci set luci.main.lang=zh_cn
 uci set luci.main.mediaurlbase='/luci-static/argon'
 uci commit luci
@@ -17,11 +19,17 @@ uci -q batch <<-EOF
 EOF
 uci commit system
 
+uci set fstab.@global[0].anon_mount=1
+uci commit fstab
+
 uci set nlbwmon.@nlbwmon[0].refresh_interval=2s
 uci commit nlbwmon
 
 sed -i 's/^src/#&/' /etc/opkg/distfeeds.conf
 sed -i 's/^option check_signature/#&/' /etc/opkg.conf
+
+sed -i '/option disabled/d' /etc/config/wireless
+sed -i '/set wireless.radio${devidx}.disabled/d' /lib/wifi/mac80211
 
 sed -i '/DISTRIB_REVISION/d' /etc/openwrt_release
 echo "DISTRIB_REVISION='R$(TZ=UTC-8 date "+%-m.%-d")'" >> /etc/openwrt_release
@@ -29,5 +37,11 @@ sed -i '/DISTRIB_RELEASE/d' /etc/openwrt_release
 echo "DISTRIB_RELEASE='$(TZ=UTC-8 date "+%Y.%-m.%-d")'" >> /etc/openwrt_release
 sed -i '/DISTRIB_DESCRIPTION/d' /etc/openwrt_release
 echo "DISTRIB_DESCRIPTION='OpenWrt '" >> /etc/openwrt_release
+
+sed -i '/log-facility/d' /etc/dnsmasq.conf
+echo "log-facility=/dev/null" >> /etc/dnsmasq.conf
+
+rm -rf /tmp/luci-modulecache
+rm -rf /tmp/luci-indexcache
 
 exit 0

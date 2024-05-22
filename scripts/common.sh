@@ -2,7 +2,7 @@
 
 # 移除package
 rm_package() {
-    find ./ -maxdepth 4 -iname "$1" -type d | xargs rm -rf
+    find ./ -maxdepth 4 -iname "$1" -type d | xargs rm -rf || echo -e "\e[31mNot found [$1]\e[0m"
 }
 
 rm_package "*adguardhome"
@@ -14,14 +14,15 @@ rm_package "*ddnsto"
 rm_package "*dockerman"
 rm_package "*mosdns"
 rm_package "*netdata"
+rm_package "*netspeedtest"
 rm_package "*nlbwmon*"
 rm_package "*onliner"
 rm_package "*openclash"
+rm_package "*partexp"
 rm_package "*passwall"
 rm_package "*pushbot"
 rm_package "*qbittorrent*"
 rm_package "*shadowsocks*"
-rm_package "*smartdns"
 rm_package "*ssr*"
 rm_package "*transmission*"
 rm_package "*trojan*"
@@ -29,31 +30,37 @@ rm_package "*v2ray*"
 rm_package "*xray*"
 
 # 添加package
-git clone --depth=1 https://github.com/sbwml/luci-app-mosdns.git package/mosdns
-git clone --depth=1 https://github.com/sbwml/v2ray-geodata.git package/geodata
-git clone --depth=1 https://github.com/sirpdboy/luci-app-advanced.git package/luci-app-advanced
-git clone --depth=1 https://github.com/sirpdboy/luci-app-autotimeset.git package/luci-app-autotimeset
-git clone --depth=1 https://github.com/zzsj0928/luci-app-pushbot.git package/luci-app-pushbot
+git clone -q --depth=1 https://github.com/sbwml/luci-app-mosdns.git package/mosdns
+git clone -q --depth=1 https://github.com/sbwml/v2ray-geodata.git package/v2ray-geodata
+git clone -q --depth=1 https://github.com/sirpdboy/luci-app-advanced.git package/luci-app-advanced
+git clone -q --depth=1 https://github.com/sirpdboy/luci-app-autotimeset.git package/luci-app-autotimeset
+git clone -q --depth=1 https://github.com/sirpdboy/luci-app-partexp.git package/luci-app-partexp
+git clone -q --depth=1 https://github.com/sirpdboy/netspeedtest.git package/luci-app-netspeedtest
+git clone -q --depth=1 https://github.com/zzsj0928/luci-app-pushbot.git package/luci-app-pushbot
 
 git_sparse_clone() {
     branch="$1" repourl="$2" repodir="$3"
-    git clone -b $branch --depth=1 --filter=blob:none --sparse $repourl package/cache
-    git -C package/cache sparse-checkout set $repodir
-    mv -f package/cache/$repodir package
-    rm -rf package/cache
+    [[ -d "package/cache" ]] && rm -rf package/cache
+    git clone -q --branch=$branch --depth=1 --filter=blob:none --sparse $repourl package/cache &&
+    git -C package/cache sparse-checkout set $repodir &&
+    mv -f package/cache/$repodir package &&
+    rm -rf package/cache ||
+    echo -e "\e[31mFailed to sparse clone $repodir from $repourl($branch).\e[0m"
 }
 
 git_sparse_clone main https://github.com/linkease/nas-packages-luci.git luci/luci-app-ddnsto
 git_sparse_clone main https://github.com/ophub/luci-app-amlogic.git luci-app-amlogic
-git_sparse_clone master https://github.com/immortalwrt/luci.git applications/luci-app-smartdns
-git_sparse_clone master https://github.com/immortalwrt/packages.git net/smartdns
 git_sparse_clone master https://github.com/kiddin9/openwrt-packages.git luci-app-control-timewol
 git_sparse_clone master https://github.com/kiddin9/openwrt-packages.git luci-app-onliner
 git_sparse_clone master https://github.com/linkease/nas-packages.git network/services/ddnsto
 git_sparse_clone master https://github.com/lisaac/luci-app-dockerman.git applications/luci-app-dockerman
 git_sparse_clone master https://github.com/vernesong/OpenClash.git luci-app-openclash
 
-# 更改 Argon 主题背景
+# requires golang latest version
+rm -rf feeds/packages/lang/golang
+git clone -q --depth=1 https://github.com/sbwml/packages_lang_golang feeds/packages/lang/golang
+
+# 更改默认主题背景
 cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
 # samba解除root限制
@@ -85,7 +92,7 @@ sed -i 's|admin/network|admin/control|g' feeds/luci/applications/luci-app-sqm/ro
 # 修改插件名字
 replace_text() {
   search_text="$1" new_text="$2"
-  sed -i "s/$search_text/$new_text/g" $(grep "$search_text" -rl ./)
+  sed -i "s/$search_text/$new_text/g" $(grep "$search_text" -rl ./ 2>/dev/null) || echo -e "\e[31mNot found [$search_text]\e[0m"
 }
 
 replace_text "Argon 主题设置" "主题设置"
@@ -95,9 +102,8 @@ replace_text "KMS 服务器" "KMS激活"
 replace_text "QoS Nftables 版" "QoS管理"
 replace_text "SQM QoS" "SQM管理"
 replace_text "SQM 队列管理" "SQM管理"
-replace_text "Turbo ACC 网络加速" "网络加速"
-replace_text "USB 打印服务器" "USB打印设置"
 replace_text "动态 DNS" "动态DNS"
 replace_text "网络存储" "NAS"
 replace_text "解除网易云音乐播放限制" "音乐解锁"
-replace_text "迷你DLNA" "miniDLNA"
+
+echo -e "\e[32m$0 [DONE]\e[0m"
