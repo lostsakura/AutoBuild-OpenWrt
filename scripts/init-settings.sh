@@ -11,10 +11,11 @@ uci -q batch <<-EOF
     set system.@system[0].zonename='Asia/Shanghai'
 
     delete system.ntp.server
-    add_list system.ntp.server='ntp.ntsc.ac.cn'
-    add_list system.ntp.server='cn.ntp.org.cn'
+    add_list system.ntp.server='time.cloudflare.com'
+    add_list system.ntp.server='ntp.tencent.com'
+    add_list system.ntp.server='ntp.aliyun.com'
+    add_list system.ntp.server='time.apple.com'
     add_list system.ntp.server='cn.pool.ntp.org'
-    add_list system.ntp.server='pool.ntp.org'
 
 EOF
 uci commit system
